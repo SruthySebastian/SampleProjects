@@ -1,0 +1,61 @@
+1. Create a REST API to return Employee information. Use Flask/Django API: GET /employee
+
+Return value: {
+"name": "randomly generated string",
+"age": random integer between 22 & 60,
+"location": "randomly selected one of the 52 states",
+"designation": "Randomly selected from: ['Developer', 'Tester', 'Support Analyst', 'Team Lead', 'Project Manager', 'Engineering Manager', 'Director']",
+"salary": random integer which follows the mapping below
+}
+
+Note:
+Salary mapping for designations:
+Developer: Randomly choose between 60000 & 75000
+Tester: Randomly choose between 50000 & 70000
+Support Analyst: Randomly choose between 50000 & 70000
+Team Lead: Randomly choose between 60000 & 85000
+Project Manager: Randomly choose between 75000 & 90000
+Engineering Manager: Randomly choose between 80000 & 100000
+Director: Randomly choose between 90000 & 120000
+
+Bonus exercise:
+Can you create a swagger for this API ?
+Use this as a reference: https://swagger.io/docs/specification/basic-structure/
+
+
+2. Containerize the REST API
+Create a Dockerfile to containerize the REST API Push the image to Docker Hub
+Pull the image to your local workstation
+Run the image & try to access the API
+Note: Use this course to gain understanding on docker. It is a free Udemy course which is ~3 hrs long. https://www.udemy.com/course/docker-essentials/
+
+
+3. Run ELK stack
+Pull elastic stack apps as docker images in local workstation:
+docker pull elasticsearch:7.13.3 (https://hub.docker.com/_/elasticsearch?tab=description&page=1&ordering=last_updated)
+docker pull kibana:7.13.3 (https://hub.docker.com/_/kibana?tab=description&page=1&ordering=last_updated) Run the containers (elasticsearch and then kibana)
+Ensure you are being able to access the applications:
+Elasticsearch: http://localhost:9200/ Kibana: http://localhost:5601/
+
+
+4. Data Ingestion Script
+Create a python script that does the following:
+
+Single insert:
+Write a function that queries GET /employee API 1 time
+Then insert the single record into Elasticsearch. Use Python elasticsearch module (https://elasticsearch-py.readthedocs.io/en/v7.13.3/)
+
+Bulk insert:
+Write a function that queries GET /employee API 10 times
+Try to insert all 10 records together in Elasticsearch using Bulk API (https://elasticsearch-py.readthedocs.io/en/v7.13.3/helpers.html)
+Accept a command line parameter to choose between these different modes
+
+
+5. Create Kibana dashboards
+Create different charts in Kibana:
+1. Count of employees in each age group
+2. Count of employees in each salary range 3. Count of employees across different states
+4. Create a Dashboard named "Employee" containing all three above charts
+Note: You may follow this URL for some guideline: https://www.elastic.co/guide/en/kibana/7.13/dashboard.html
+
+------------------------------------------------END-----------------------------------------------------------------------------
