@@ -1,0 +1,26 @@
+version: '3.2'
+
+
+services:
+
+  testimage:
+
+    image: sruthysebastian/gesample:single_api_data_ingestion
+
+    container_name: data_ingestion_container
+
+    ports:
+
+      - 5000:5000
+
+    networks:
+
+      - data_ingestion_network
+
+
+
+networks:
+
+  data_ingestion_network:
+
+    driver: bridge

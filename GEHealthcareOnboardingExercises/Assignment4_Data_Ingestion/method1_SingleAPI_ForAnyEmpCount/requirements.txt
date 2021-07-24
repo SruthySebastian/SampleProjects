@@ -1,0 +1,4 @@
+Flask == 1.1.1
+#   elasticsearch == 7.13.3
+#   Elasticsearch 7.x
+elasticsearch>=7.0.0,<8.0.0

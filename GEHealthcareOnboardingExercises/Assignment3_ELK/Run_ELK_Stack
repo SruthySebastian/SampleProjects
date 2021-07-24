@@ -1,0 +1,122 @@
+# Assignment 3
+# ------------
+
+# 1] Elasticsearch
+# ----------------
+
+# commands used:
+cd documents/
+docker pull elasticsearch:7.13.3
+docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:7.13.3
+
+(Reference:
+https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
+
+# test:
+Elasticsearch:   http://localhost:9200/
+
+# o/p:
+
+{
+  "name" : "e6d451424978",
+  "cluster_name" : "docker-cluster",
+  "cluster_uuid" : "aTV9tCX4SziCEDJw5JXXxg",
+  "version" : {
+    "number" : "7.13.3",
+    "build_flavor" : "default",
+    "build_type" : "docker",
+    "build_hash" : "5d21bea28db1e89ecc1f66311ebdec9dc3aa7d64",
+    "build_date" : "2021-07-02T12:06:10.804015202Z",
+    "build_snapshot" : false,
+    "lucene_version" : "8.8.2",
+    "minimum_wire_compatibility_version" : "6.8.0",
+    "minimum_index_compatibility_version" : "6.0.0-beta1"
+  },
+  "tagline" : "You Know, for Search"
+}
+
+
+# docker container prune
+# ----------------------------------------------------------
+
+
+# 2] Kibana
+# ---------
+
+# commands used :
+cd documents/
+docker pull kibana:7.13.3
+docker network create elastic
+docker pull elasticsearch:7.13.3
+
+# docker rm --force es01-test
+docker run --name es01-test --net elastic -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:7.13.3
+
+docker pull kibana:7.13.3
+docker run --name kib01-test --net elastic -p 5601:5601 -e "ELASTICSEARCH_HOSTS=http://es01-test:9200" kibana:7.13.3
+
+
+# docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:7.13.3   ### OLD ###
+# docker run --name es01-test --net elastic -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.13.3
+# docker pull docker.elastic.co/kibana/kibana:7.13.3   # Creates duplicate
+
+(Reference:
+https://www.elastic.co/guide/en/kibana/current/docker.html)
+
+# Test 1 : Elasticsearch -> es01-test
+# -----------------------------------
+Elasticsearch: http://localhost:9200/
+
+{
+  "name" : "bc6f8c75a0ba",
+  "cluster_name" : "docker-cluster",
+  "cluster_uuid" : "zzSkKOTvRgiLt84ZGiIOKA",
+  "version" : {
+    "number" : "7.13.3",
+    "build_flavor" : "default",
+    "build_type" : "docker",
+    "build_hash" : "5d21bea28db1e89ecc1f66311ebdec9dc3aa7d64",
+    "build_date" : "2021-07-02T12:06:10.804015202Z",
+    "build_snapshot" : false,
+    "lucene_version" : "8.8.2",
+    "minimum_wire_compatibility_version" : "6.8.0",
+    "minimum_index_compatibility_version" : "6.0.0-beta1"
+  },
+  "tagline" : "You Know, for Search"
+}
+
+
+# Test 2 : Kibana -> kib01-test
+# ------------------------------
+Kibana: http://localhost:5601/
+
+# Welcome to Elastic
+# Redirects to : http://localhost:5601/app/home#/
+
+
+
+
+
+
+# ----------
+To stop your containers, run:
+docker stop es01-test
+docker stop kib01-test
+
+To remove the containers and their network, run:
+docker network rm elastic
+docker rm es01-test
+docker rm kib01-test
+
+# ----------
+# To fix Error response from daemon: network with name elastic already exists
+docker network inspect <network name>
+docker network disconnect <network name> <container id/ container name>
+# docker network disconnect elastic es01-test
+# "docker network disconnect" requires exactly 2 arguments.
+
+docker network prune
+docker volume prune
+docker system prune
+
+# ----------

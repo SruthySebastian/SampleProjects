@@ -1,0 +1,7 @@
+# Refer
+# https://elasticsearch-py.readthedocs.io/en/v7.13.3/
+
+# python -m pip install elasticsearch
+
+# Elasticsearch 7.x  ----- add to requirements.txt
+# elasticsearch>=7.0.0,<8.0.0
