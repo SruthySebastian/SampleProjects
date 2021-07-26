@@ -1,14 +1,23 @@
 from __future__ import absolute_import
-from datetime import datetime
-from flask import Flask, jsonify, request
-# from .Employee import Employee  # # ModuleNotFoundError:
-from elasticsearch import Elasticsearch
-import sys
-import os
-# import requests
-import json
-import random
-import string
+try:
+    import os
+    import sys
+    import random
+    import string
+
+    import elasticsearch
+    from elasticsearch import Elasticsearch
+    from elasticsearch import helpers
+
+    import pandas as pd
+    import numpy as np
+    import json
+    from datetime import datetime
+    from flask import Flask, jsonify, request
+
+    print("All Modules Loaded! ")
+except Exception as e:
+    print(f"Some Modules are missing {e}")
 
 
 class Employee:
@@ -165,11 +174,12 @@ app = Flask(__name__)
 port = 5000
 
 
-@app.route('/', methods=["GET"])   # Sample URL : http://192.168.1.151:5000
+@app.route('/', methods=["GET"])  # Sample URL : http://192.168.1.151:5000
 def helloWorld():
     response = f"<p>Hello World in Docker!, Port : {port} <p>"
     # response.status_code = 200
     return response, 200
+
 
 # -- Data Ingestion script --
 
@@ -181,13 +191,14 @@ def getEmployee():
     # response.status_code = 200
     return response, 200
 
+
 # bulk
 @app.route('/api/v1/resources/employees')  # Sample URL : http://192.168.1.151:5000/api/v1/resources/employees?count=4
 def getEmployees():
     emp_count = int(request.args.get('count'))
     emp_list = []
     response = f"<p>Hello.. {emp_count} employees!!! <p>"
-    for i in range(0,emp_count):
+    for i in range(0, emp_count):
         employee = Employee()
         emp_list.append(employee.get_new_employee())
 
@@ -197,6 +208,96 @@ def getEmployees():
     # response.status_code = 200
     return response, 200
 
+
+# -------------------------------------------------------------------
+# Data Ingestion
+
+# ENDPOINT = "http://localhost:9200/"
+# es = Elasticsearch(timeout=600, hosts=ENDPOINT)
+# OR
+es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+print(f"es.ping() : {es.ping()}")
+
+
+def dataIngestion(data_count):
+    print(f"dataIngestion data_count = {data_count}")
+    if data_count and int(data_count) != 0:
+
+        # To get all the index names
+        resp = es.indices.get_alias('*')
+        for index_name in resp:
+            print(index_name)
+
+        # create index
+        if "employee" not in resp:
+            es.indices.create(index="employee", ignore=400)
+        else:
+            pass  # index of this name already present
+
+        singleInsert() if int(data_count) == 1 else bulkInsert(int(data_count))
+
+    else:
+        print("\n*** Please enter a valid non-zero number as count ***\n")
+
+
+def singleInsert():
+    print("singleInsert")
+
+    e_single = Employee()
+    # print(f"e_single.get_new_employee() : \n{e_single.get_new_employee()} ")
+
+    # single record insertion
+    res1 = es.index(index='employee', doc_type='testemployee', body=e_single.get_new_employee())
+    print(f"res1 : \n{res1}")
+
+
+def bulkInsert(bulk_data_count):
+    print("bulkInsert")
+    bulk_emp_list = []
+    print(f"Hello.. {bulk_data_count} employees!!!")
+    for i in range(0, bulk_data_count):
+        employee = Employee()
+        bulk_emp_list.append(employee.get_new_employee())
+    print(f"bulk_emp_list :\n{bulk_emp_list}")
+
+    # defining generator function
+    def generator(bulk_data):
+        print("\n Inside ELK data generator\n")
+        for c, line in enumerate(bulk_data):
+            yield {
+                '_index': 'employee',  # name your index
+                '_type': '_doc',  # type is document
+                # '_id': line.get("<emp_id>", None),  # TODO : auto generate/increment unique emp_id
+                '_source': {
+                    "name": line.get("name", ""),
+                    "age": line.get("age", ""),
+                    "location": line.get("location", ""),
+                    "designation": line.get("designation", ""),
+                    "salary": line.get("salary", "")
+                }
+            }
+        raise StopIteration
+
+    # Converting employee dictionary list data into elasticsearch format
+    my_elk_employees = generator(bulk_emp_list)
+
+    # To verify a sample format
+    print(f"next(my_elk_employees) : \n{next(my_elk_employees)}")
+
+    # Upload data into elasticsearch using Bulk API
+    # import elasticsearch
+    # from elasticsearch import helpers
+    try:
+        res = helpers.bulk(es, generator(bulk_emp_list))
+        print("Working")
+    except Exception as e:
+        print(f"Exception : \n{e}\n")
+        # o/p : Exception : generator raised StopIteration
+        pass
+
+    # Go to Kibana and verify : GET _cat/indices , GET employee/_search
+
+# -------------------------------------------------------------------
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -236,38 +337,19 @@ def gateway_timeout(e):
 
 
 if __name__ == "__main__":
+    count = input("Hello!\n Please enter the count of employees you want to generate"
+                  "\n -------------------------------------------------------------"
+                  "\n Note"
+                  "\n Enter 1 for  single insert"
+                  "\n Enter an input > 1 for bulk insert"
+                  "\n -------------------------------------------------------------"
+                  "\n count : ")
+    print(f"Count : {count}")
+    dataIngestion(int(count))
     app.run(debug=True, host="0.0.0.0", port=5000)
 
 
 # # -------------------------------------------------------------------
-# # es = Elasticsearch()
-# es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
-#
-#
-# doc = {
-#     'author': 'kimchy',
-#     'text': 'Elasticsearch: cool. bonsai cool.',
-#     'timestamp': datetime.now(),
-# }
-#
-# print(doc)
-#
-# res = es.index(index="test-index", id=1, body=doc)
-# print(res['result'])
-#
-# res = es.get(index="test-index", id=1)
-# print(res['_source'])
-#
-# es.indices.refresh(index="test-index")
-#
-# res = es.search(index="test-index", body={"query": {"match_all": {}}})
-# print("Got %d Hits:" % res['hits']['total']['value'])
-# for hit in res['hits']['hits']:
-#     print("%(timestamp)s %(author)s: %(text)s" % hit["_source"])
-#
-
-# -------------------------------------------------------------------
-
 
 # Regarding assignment:-
 # Implement multiple employee data ingestion 2 ways :-
@@ -278,25 +360,3 @@ if __name__ == "__main__":
 
 # -------------------------------------------------------------------
 
-# #    ### test ###
-# # # Data Ingestion script :
-# @app.route('/api/v1/resources/employees')  # Sample URL : http://192.168.1.151:5000/api/v1/resources/employees?count=4
-# def getEmployees():
-#     emp_count = int(request.args.get('count'))
-#     return f"<p>Hello.. {emp_count} employees!!! <p>"
-#     hello = ""
-#     # for i in range(0, emp_count):
-#     #     print(f"hello{i + 1}")
-#     #
-#     # return f"<p>Hello.. employees <p>" \
-#     #        f"<p>request : {request}<p>" \
-#     #        f"<p>request.args : {request.args}<p>" \
-#     #        f"<p>request.values : {request.values}<p>" \
-#     #        f"<p>request.data : {request.data}<p>" \
-#     #        f"<p>request.args.keys() : {request.args.keys()}<p>" \
-#     #        f"<p>request.args.values() : {request.args.values()}<p>" \
-#     #        f"<p>request.args.get('count') : {request.args.get('count')}<p>" \
-#     #        f"<p> Employees Count = {emp_count}<p>" \
-#     #        f"<p>type of emp count = {type(emp_count)}<p>"
-#     #
-# # ------------------------------------------------------------------
