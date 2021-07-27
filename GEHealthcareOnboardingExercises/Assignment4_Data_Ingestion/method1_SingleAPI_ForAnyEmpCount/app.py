@@ -223,16 +223,16 @@ def dataIngestion(data_count):
     print(f"dataIngestion data_count = {data_count}")
     if data_count and int(data_count) != 0:
 
-        # To get all the index names
-        resp = es.indices.get_alias('*')
-        for index_name in resp:
-            print(index_name)
-
-        # create index
-        if "employee" not in resp:
-            es.indices.create(index="employee", ignore=400)
-        else:
-            pass  # index of this name already present
+        # # To get all the index names
+        # resp = es.indices.get_alias('*')
+        # for index_name in resp:
+        #     print(index_name)
+        #
+        # # create index
+        # if "employee" not in resp:
+        #     es.indices.create(index="employee", ignore=400)
+        # else:
+        #     pass  # index of this name already present
 
         singleInsert() if int(data_count) == 1 else bulkInsert(int(data_count))
 
@@ -247,8 +247,9 @@ def singleInsert():
     # print(f"e_single.get_new_employee() : \n{e_single.get_new_employee()} ")
 
     # single record insertion
-    res1 = es.index(index='employee', doc_type='testemployee', body=e_single.get_new_employee())
+    res1 = es.index(index='employee', body=e_single.get_new_employee())  # doc_type='testemployee' --> not mandatory
     print(f"res1 : \n{res1}")
+
 
 
 def bulkInsert(bulk_data_count):
@@ -260,7 +261,7 @@ def bulkInsert(bulk_data_count):
         bulk_emp_list.append(employee.get_new_employee())
     print(f"bulk_emp_list :\n{bulk_emp_list}")
 
-    # defining generator function
+    # defining elk data generator function
     def generator(bulk_data):
         print("\n Inside ELK data generator\n")
         for c, line in enumerate(bulk_data):
@@ -276,7 +277,7 @@ def bulkInsert(bulk_data_count):
                     "salary": line.get("salary", "")
                 }
             }
-        raise StopIteration
+        # raise StopIteration
 
     # Converting employee dictionary list data into elasticsearch format
     my_elk_employees = generator(bulk_emp_list)
